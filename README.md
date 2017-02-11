@@ -1,2 +1,63 @@
 # mythtv-stream-mpeg-dash
-Will allow you to live transcode and stream any mythtv recording to be watched via the browser
+Will allow you to transcode and stream any mythtv recording to be watched via the browser
+
+Features:
+* Transcodes from MPEG2 or whatever format your recordings are in, as long as they are recognized by ffmpeg
+* Watch recording while transcode is still taking place (just don't seek too far ahead)
+* Can transcode videos to multiple bitrates/resolutions for adaptive playback over less reliable networks (e.g. cell phone browser).
+
+TODO:
+* Allow watching recordings that are currently being recorded (live recordings)
+
+This depends on:
+* mythtv (for commerical skip info and looking up the name of each recording based on filename)
+** I use version v0.27
+* ffmpeg (for transcoding)
+** I use static version ffmpeg-3.2-64bit-static to best support seeking for commerical skipping
+* GNU screen
+** This is to allow monitoring of transcode and packager and to support background processes launched by the web-facing PHP script
+** apt-get install screen
+* Shaka packager
+** This consumes the transcoded video as it is being processed by ffmpeg and generates small segmented mp4 files that will be played by the browser player
+** I built it myself but there are linux builds available to download.  The git version I used is similar to their release version 1.6.0.  
+* Shaka player
+** This is the Javascript-based browser player that plays MPEG DASH content
+** I use version 2.0.1.
+
+Setup:
+* Build shaka packager (or download binary) and put into a directory with ffmpeg
+* Put index.php and shaka-player.compiled.js in a directory under the web server root, preferably create one at /var/www/html/dash
+* Create another directory under the previously created one to store videos, preferably /var/www/html/dash/videos  Change ownership or permissions so that the web server can write to this directory.
+* Change lines at the top of the index.php file to point to:
+** $video_path -- This is where the original mythtv recordings are.  This assumes that the extension of the files are .mpg (may be different for different versions of mythtv)
+** $dash_path -- This is the dash video path (just created in the third step)
+** $program_path -- This is where ffmpeg and packager (shaka-packager) are located (from the first step above)
+* Optional final step: modify 2 lines of mythweb code to change ASX Stream button on the "Recorded Programs" page to DASH Stream button
+** Here is the diff:
+
+```diff
+*** /var/www/html/mythweb/modules/tv/tmpl/default/recorded.php.original
+--- /var/www/html/mythweb/modules/tv/tmpl/default/recorded.php
+***************
+*** 158,165 ****
+              echo ' -noimg">';
+  ?>
+          <a class="x-download"
+!             href="<?php echo video_url($show, true) ?>" title="<?php echo t('ASX Stream'); ?>"
+!             ><img height="24" width="24" src="<?php echo skin_url ?>/img/play_sm.png" alt="<?php echo t('ASX Stream'); ?>"></a>
+          <a class="x-download"
+              href="<?php echo $show->url ?>" title="<?php echo t('Direct Download'); ?>"
+              ><img height="24" width="24" src="<?php echo skin_url ?>/img/video_sm.png" alt="<?php echo t('Direct Download'); ?>"></a>
+--- 158,165 ----
+              echo ' -noimg">';
+  ?>
+          <a class="x-download"
+!             target="_blank" href="/dash/index.php?filename=<?php echo $show->chanid."_".gmdate('YmdHis', $show->recstartts) ?>" title="<?php echo 'DASH Stream'; ?>"
+!             ><img height="24" width="24" src="<?php echo skin_url ?>/img/play_sm.png" alt="<?php echo 'DASH Stream'; ?>"></a>
+          <a class="x-download"
+              href="<?php echo $show->url ?>" title="<?php echo t('Direct Download'); ?>"
+              ><img height="24" width="24" src="<?php echo skin_url ?>/img/video_sm.png" alt="<?php echo t('Direct Download'); ?>"></a>
+```
+
+
+That's it!  If you have any trouble getting this working, file an issue in the issue tracker and I will try to get back to you.  Keep in mind that this will quickly bring down a server if many people try to transcode and watch different videos all at once.  If many people want to watch similar recordings, it should be fine since everybody can simultaneously watch a recording initiated by one person.
