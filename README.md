@@ -11,29 +11,29 @@ TODO:
 
 This depends on:
 * mythtv (for commerical skip info and looking up the name of each recording based on filename)
-** I use version v0.27
+  * I use version v0.27
 * ffmpeg (for transcoding)
-** I use static version ffmpeg-3.2-64bit-static to best support seeking for commerical skipping
+  * I use static version ffmpeg-3.2-64bit-static to best support seeking for commerical skipping
 * GNU screen
-** This is to allow monitoring of transcode and packager and to support background processes launched by the web-facing PHP script
-** apt-get install screen
+  * This is to allow monitoring of transcode and packager and to support background processes launched by the web-facing PHP script
+  * apt-get install screen
 * Shaka packager
-** This consumes the transcoded video as it is being processed by ffmpeg and generates small segmented mp4 files that will be played by the browser player
-** I built it myself but there are linux builds available to download.  The git version I used is similar to their release version 1.6.0.  
+  * This consumes the transcoded video as it is being processed by ffmpeg and generates small segmented mp4 files that will be played by the browser player
+  * I built it myself but there are linux builds available to download.  The git version I used is similar to their release version 1.6.0.  
 * Shaka player
-** This is the Javascript-based browser player that plays MPEG DASH content
-** I use version 2.0.1.
+  * This is the Javascript-based browser player that plays MPEG DASH content
+  * I use version 2.0.1.
 
 Setup:
 * Build shaka packager (or download binary) and put into a directory with ffmpeg
 * Put index.php and shaka-player.compiled.js in a directory under the web server root, preferably create one at /var/www/html/dash
 * Create another directory under the previously created one to store videos, preferably /var/www/html/dash/videos  Change ownership or permissions so that the web server can write to this directory.
 * Change lines at the top of the index.php file to point to:
-** $video_path -- This is where the original mythtv recordings are.  This assumes that the extension of the files are .mpg (may be different for different versions of mythtv)
-** $dash_path -- This is the dash video path (just created in the third step)
-** $program_path -- This is where ffmpeg and packager (shaka-packager) are located (from the first step above)
+  * $video_path -- This is where the original mythtv recordings are.  This assumes that the extension of the files are .mpg (may be different for different versions of mythtv)
+  * $dash_path -- This is the dash video path (just created in the third step)
+  * $program_path -- This is where ffmpeg and packager (shaka-packager) are located (from the first step above)
 * Optional final step: modify 2 lines of mythweb code to change ASX Stream button on the "Recorded Programs" page to DASH Stream button
-** Here is the diff:
+  * Here is the diff:
 
 ```diff
 *** /var/www/html/mythweb/modules/tv/tmpl/default/recorded.php.original
