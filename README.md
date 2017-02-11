@@ -61,3 +61,7 @@ Setup:
 
 
 That's it!  If you have any trouble getting this working, file an issue in the issue tracker and I will try to get back to you.  Keep in mind that this will quickly bring down a server if many people try to transcode and watch different videos all at once.  If many people want to watch similar recordings, it should be fine since everybody can simultaneously watch a recording initiated by one person.
+
+To watch TV recording, either click the top icon for your recording in the "Recorded Programs" listing (if you modified mythweb in the final step above) or find the .mpg filename in your recording directory, remove the .mpg from the filename and browse to http://yourserver/dash/index.php?filename=NNNN_NNNNNNNNNNNNNN  Fill out the form to specify the quality you want and click "Watch Video".  
+
+Additional tips: If you want to add a new quality setting for a particular video, click "Cleanup Video Files" and then select another quality setting.  It then will generate DASH manifest and DASH files for both the original quality setting AND the second quality setting.  To interrupt the transcode and delete all generated files click "Delete Video Files".  To remove only the DASH files (used for watching the recording), click "Cleanup Video Files".  This will allow you to quickly regenerate the DASH video files later, without waiting for a transcode but it will consume more disk space than clicking "Delete Video Files".  Please note that NONE of these buttons will delete the original source video file.
