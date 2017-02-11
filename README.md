@@ -4,6 +4,7 @@ Will allow you to transcode and stream any mythtv recording to be watched via th
 Features:
 * Transcodes from MPEG2 or whatever format your recordings are in, as long as they are recognized by ffmpeg
 * Watch recording while transcode is still taking place (just don't seek too far ahead)
+* Use commercial skip info from mythtv database to skip commercials
 * Can transcode videos to multiple bitrates/resolutions for adaptive playback over less reliable networks (e.g. cell phone browser).
 
 TODO:
