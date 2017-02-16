@@ -26,13 +26,15 @@ This depends on:
   * I use version 2.0.1.
 
 Setup:
-* Build shaka packager (or download binary) and put into a directory with ffmpeg
+* Build shaka packager (or download binary) and put into a central directory that will be used for binaries (I used /home/mythtv).  The name of the binary is "packager" and if you build shaka_packager, it will by located in src/out/Release or src/out/Debug, depending on whether you do a Release or Debug build.
+* Copy the static ffmpeg binary to the binaries directory also.
 * Put index.php and shaka-player.compiled.js in a directory under the web server root, preferably create one at /var/www/html/dash
 * Create another directory under the previously created one to store videos, preferably /var/www/html/dash/videos  Change ownership or permissions so that the web server can write to this directory.
 * Change lines at the top of the index.php file to point to:
   * $video_path -- This is where the original mythtv recordings are.  This assumes that the extension of the files are .mpg (may be different for different versions of mythtv)
-  * $dash_path -- This is the dash video path (just created in the third step)
-  * $program_path -- This is where ffmpeg and packager (shaka-packager) are located (from the first step above)
+  * $dash_path -- This is the dash video path (just created in the fourth step)
+  * $program_path -- This is where ffmpeg and packager binaries are located (from the first two steps above)
+* Create a file called "mythdb.txt" and also add it to the directory with the binaries.  This file should contain the plaintext mythtv database password.  index.php assumes that the database server is running on localhost and the database username is mythtv and the database name is mythconverg.  If any of these assumptions are not correct, modify the corresponding lines in index.php.
 * Optional final step: modify 2 lines of mythweb code to change ASX Stream button on the "Recorded Programs" page to DASH Stream button
   * Here is the diff:
 
