@@ -12,18 +12,18 @@ TODO:
 
 This depends on:
 * mythtv (for commerical skip info and looking up the name of each recording based on filename)
-  * I use version v0.27
+  * I use version v0.33
 * ffmpeg (for transcoding)
-  * I use static version ffmpeg-3.2-64bit-static to best support seeking for commerical skipping
+  * I use ffmpeg version 5.1.3
 * GNU screen
   * This is to allow monitoring of transcode and packager and to support background processes launched by the web-facing PHP script
   * apt-get install screen
 * Shaka packager
   * This consumes the transcoded video as it is being processed by ffmpeg and generates small segmented mp4 files that will be played by the browser player
-  * I built it myself but there are linux builds available to download.  The git version I used is similar to their release version 1.6.0.  
+  * I use packager version v2.6.1-634af65-release
 * Shaka player
   * This is the Javascript-based browser player that plays MPEG DASH content
-  * I use version 2.0.1.
+  * I use version 4.3.6
 
 Setup:
 * Build shaka packager (or download binary) and put into a central directory that will be used for binaries (I used /home/mythtv).  The name of the binary is "packager" and if you build shaka_packager, it will by located in src/out/Release or src/out/Debug, depending on whether you do a Release or Debug build.
@@ -65,6 +65,6 @@ Setup:
 
 That's it!  If you have any trouble getting this working, file an issue in the issue tracker and I will try to get back to you.  Keep in mind that this will quickly bring down a server if many people try to transcode and watch different videos all at once.  If many people want to watch similar recordings, it should be fine since everybody can simultaneously watch a recording initiated by one person.
 
-To watch TV recording, either click the top icon for your recording in the "Recorded Programs" listing (if you modified mythweb in the final step above) or find the .mpg filename in your recording directory, remove the .mpg from the filename and browse to http://yourserver/dash/index.php?filename=NNNN_NNNNNNNNNNNNNN  Fill out the form to specify the quality you want and click "Watch Video".  
+To watch TV recording, either click the top icon for your recording in the "Recorded Programs" listing (if you modified mythweb in the final step above) or find the .mpg filename in your recording directory, remove the .mpg from the filename and browse to http://yourserver/dash/index.php?filename=NNNN_NNNNNNNNNNNNNN  Fill out the form to specify the quality you want and click "Watch Video".
 
 Additional tips: If you want to add a new quality setting for a particular video, click "Cleanup Video Files" and then select another quality setting.  It then will generate DASH manifest and DASH files for both the original quality setting AND the second quality setting.  To interrupt the transcode and delete all generated files click "Delete Video Files".  To remove only the DASH files (used for watching the recording), click "Cleanup Video Files".  This will allow you to quickly regenerate the DASH video files later, without waiting for a transcode but it will consume more disk space than clicking "Delete Video Files".  Please note that NONE of these buttons will delete the original source video file.
