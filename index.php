@@ -66,28 +66,31 @@ for ($i = 0; $i < count($file_list); $i++)
     {
         $ids[] = $fn;
         preg_match_all('/^(\d*)_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/', $fn, $filedetails);
-
-        $chanid=$filedetails[1][0];
-        if ($chanid)
-        {
-            $year=$filedetails[2][0];
-            $month=$filedetails[3][0];
-            $day=$filedetails[4][0];
-            $hour=$filedetails[5][0];
-            $minute=$filedetails[6][0];
-            $second=$filedetails[7][0];
-            $starttime="$year-$month-$day $hour:$minute:$second";
-            $query_parts[] = "(chanid=".$chanid." and starttime=\"".$starttime."\")";
+        if (isset($filedetails[1][0])){
+           $chanid=$filedetails[1][0];
+           if ($chanid)
+           {
+              $year=$filedetails[2][0];
+              $month=$filedetails[3][0];
+              $day=$filedetails[4][0];
+              $hour=$filedetails[5][0];
+              $minute=$filedetails[6][0];
+              $second=$filedetails[7][0];
+              $starttime="$year-$month-$day $hour:$minute:$second";
+              $query_parts[] = "(chanid=".$chanid." and starttime=\"".$starttime."\")";
+           }
         }
     }
 }
 
-$dbconn=mysql_connect($dbserver,$dbuser,$dbpass);
-mysql_select_db($dbname,$dbconn);
-$getnames = "select title,subtitle,chanid,starttime from recorded where (".implode(" OR ", $query_parts).");";
-$result=mysql_query($getnames,$dbconn);
+$query_parts_string=implode(" OR ", $query_parts);
+$dbconn=mysqli_connect($dbserver,$dbuser,$dbpass);
+mysqli_select_db($dbconn,$dbname);
+$getnames = sprintf("select title,subtitle,chanid,starttime from recorded where %s;",
+                    $query_parts_string);
+$result=mysqli_query($dbconn,$getnames);
 $names = array();
-while ($row = mysql_fetch_assoc($result))
+while ($row = mysqli_fetch_assoc($result))
 {
     $starttime = str_replace(":", "", str_replace(" ", "", str_replace("-", "", $row['starttime'])));
     $names[$row['chanid']."_".$starttime] = $row['title'].($row['subtitle'] ? " - ".$row['subtitle'] : "");
@@ -104,13 +107,16 @@ for ($i = 0; $i < count($file_list); $i++)
         $done[] = $fn;
         preg_match_all('/^(\d*)_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/', $fn, $filedetails);
 
-        $chanid=$filedetails[1][0];
-        if ($chanid)
+        if (isset($filedetails[1][0]))
         {
-            $year=$filedetails[2][0];
-            $month=$filedetails[3][0];
-            $day=$filedetails[4][0];
-            $select_box .= "<option value=\"".$fn."\">".(array_key_exists($fn, $names)?$names[$fn]:"Unknown Title")." (".$month."/".$day."/".$year.")</option>";
+           $chanid=$filedetails[1][0];
+           if ($chanid)
+           {
+               $year=$filedetails[2][0];
+               $month=$filedetails[3][0];
+               $day=$filedetails[4][0];
+               $select_box .= "<option value=\"".$fn."\">".(array_key_exists($fn, $names)?$names[$fn]:"Unknown Title")." (".$month."/".$day."/".$year.")</option>";
+           }
         }
     }
 }
@@ -118,16 +124,16 @@ $select_box .= "</select></form>";
 if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($dash_path."/".$_REQUEST["filename"]))
 {
     $filename = $_REQUEST["filename"];
-    if ($_REQUEST["action"] == "delete")
+    if (isset($_REQUEST['action']) && $_REQUEST["action"] == "delete")
     {
         if (file_exists($dash_path."/".$filename))
         {
             // Shut down all screen sessions
-            $response = shell_exec('screen -S '.$filename."_remux -X quit");
-            $response = shell_exec('screen -S '.$filename."_encode -X quit");
-            $response = shell_exec('screen -S '.$filename."_packager -X quit");
-            $response = shell_exec('screen -S '.$filename."_feeder -X quit");
-            $response = shell_exec('screen -S '.$filename."_mpdconverter -X quit");
+            $response = shell_exec('/usr/bin/sudo /usr/bin/screen -S '.$filename."_remux -X quit");
+            $response = shell_exec('/usr/bin/sudo /usr/bin/screen -S '.$filename."_encode -X quit");
+            $response = shell_exec('/usr/bin/sudo /usr/bin/screen -S '.$filename."_packager -X quit");
+            $response = shell_exec('/usr/bin/sudo /usr/bin/screen -S '.$filename."_feeder -X quit");
+            $response = shell_exec('/usr/bin/sudo /usr/bin/screen -S '.$filename."_mpdconverter -X quit");
             // Delete files
             array_map('unlink', glob($dash_path."/".$filename."/video-*.mp4"));
             array_map('unlink', glob($dash_path."/".$filename."/video-*.ts"));
@@ -145,13 +151,13 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
         }
         echo "<html><head><title>Video Deleted</title></head><body>".$select_box."<h2>Video Deleted</h2></html>";
     }
-    else if ($_REQUEST["action"] == "restart")
+    else if (isset($_REQUEST['action']) && $_REQUEST["action"] == "restart")
     {
-        $response = shell_exec('screen -S '.$filename."_remux -X quit");
-        $response = shell_exec('screen -S '.$filename."_encode -X quit");
-        $response = shell_exec('screen -S '.$filename."_packager -X quit");
-        $response = shell_exec('screen -S '.$filename."_feeder -X quit");
-        $response = shell_exec('screen -S '.$filename."_mpdconverter -X quit");
+        $response = shell_exec('/usr/bin/sudo /usr/bin/screen -S '.$filename."_remux -X quit");
+        $response = shell_exec('/usr/bin/sudo /usr/bin/screen -S '.$filename."_encode -X quit");
+        $response = shell_exec('/usr/bin/sudo /usr/bin/screen -S '.$filename."_packager -X quit");
+        $response = shell_exec('/usr/bin/sudo /usr/bin/screen -S '.$filename."_feeder -X quit");
+        $response = shell_exec('/usr/bin/sudo /usr/bin/screen -S '.$filename."_mpdconverter -X quit");
 
         $index = 1;
         while (file_exists($dash_path."/".$filename."/status.txt.".$index))
@@ -171,7 +177,7 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
         array_map('unlink', glob($dash_path."/".$filename."/video-*.mp4"));
         header("Location: /dash/index.php?filename=".$filename);
     }
-    else if ($_REQUEST["action"] == "status")
+    else if (isset($_REQUEST['action']) && $_REQUEST["action"] == "status")
     {
         $status = array();
         if (file_exists($dash_path."/".$filename."/status.txt"))
@@ -239,7 +245,7 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
         {
             if ($_REQUEST["removecomm"]=="on")
             {
-                $fileinput = "-f concat -i ".$dash_path."/".$filename."/cutlist.txt";
+                $fileinput = "-f concat -safe 0 -i ".$dash_path."/".$filename."/cutlist.txt";
                 $length = (int) $_REQUEST["clippedlength"];
                 $cut = "cut";
             }
@@ -322,22 +328,22 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
             if ($mustencode)
             {
                 // Launch remux to mp4
-                $response = shell_exec("screen -S ".$filename."_remux -dm /bin/bash -c 'echo `date`: remux start > ".$dash_path."/".$filename."/status.txt ;".$program_path."/ffmpeg -y -i ".$video_path."/".$filename.".mpg -acodec copy -vcodec copy ".$dash_path."/".$filename."/video.mp4 && echo `date`: remux finish success >> ".$dash_path."/".$filename."/status.txt || echo `date`: remux finish failed >> ".$dash_path."/".$filename."/status.txt'");
+                $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_remux -dm /bin/bash -c 'echo `date`: remux start > ".$dash_path."/".$filename."/status.txt ;".$program_path."/ffmpeg -y -i ".$video_path."/".$filename.".mpg -acodec copy -vcodec copy ".$dash_path."/".$filename."/video.mp4 && echo `date`: remux finish success >> ".$dash_path."/".$filename."/status.txt || echo `date`: remux finish failed >> ".$dash_path."/".$filename."/status.txt'");
                 fwrite($fp, "while [ ! \"`cat ".$dash_path."/".$filename."/status.txt | grep 'remux finish success'`\" ] ; do sleep 1; done\n");
-                fwrite($fp, "echo `date`: encode start >> ".$dash_path."/".$filename."/status.txt ; ".$program_path."/ffmpeg ".$fileinput.$rescale." -c:a aac -ac 2".$audio." -af aresample=async=1 -vsync 1 -c:v libx264 -x264opts \"keyint=".$keyint.":min-keyint=".$keyint.":no-scenecut\"".$rescale.$extra.$bitrate." -filter:v yadif -threads 3".$scaling." ".$dash_path."/".$filename."/video.ts && echo `date`: encode finish success >> ".$dash_path."/".$filename."/status.txt || echo `date`: encode finish failed >> ".$dash_path."/".$filename."/status.txt\n");
-                fwrite($fp, "sleep 3 && screen -S ".$filename."_feeder -X quit\n");
+                fwrite($fp, "echo `date`: encode start >> ".$dash_path."/".$filename."/status.txt ; ".$program_path."/ffmpeg ".$fileinput.$rescale." -c:a aac -ac 2".$audio." -af aresample=async=1 -c:v libx264 -x264opts \"keyint=".$keyint.":min-keyint=".$keyint.":no-scenecut\"".$rescale.$extra.$bitrate." -filter:v yadif -threads 3".$scaling." ".$dash_path."/".$filename."/video.ts && echo `date`: encode finish success >> ".$dash_path."/".$filename."/status.txt || echo `date`: encode finish failed >> ".$dash_path."/".$filename."/status.txt\n");
+                fwrite($fp, "sleep 3 && /usr/bin/sudo /usr/bin/screen -S ".$filename."_feeder -X quit\n");
             }
             else
             {
                 fwrite($fp, "while [ ! \"`cat ".$dash_path."/".$filename."/status.txt | grep 'packager finish success'`\" ] ; do sleep 1; done\n");
             }
-            fwrite($fp, "sleep 3 && screen -S ".$filename."_packager -X quit\n");
-            fwrite($fp, "sleep 10 && screen -S ".$filename."_mpdconverter -X quit\n");
+            fwrite($fp, "sleep 3 && /usr/bin/sudo /usr/bin/screen -S ".$filename."_packager -X quit\n");
+            fwrite($fp, "sleep 10 && /usr/bin/sudo /usr/bin/screen -S ".$filename."_mpdconverter -X quit\n");
             fwrite($fp, "mv video.ts video-".$_REQUEST["quality"]."-".$cut.".ts\n");
             //fwrite($fp, $program_path."/ffmpeg -y -i video.ts -acodec copy -vcodec copy ".$dash_path."/".$filename."/video-".$_REQUEST["quality"].".mp4\n");
             //fwrite($fp, "sleep 1 && rm video.ts\n");
             fwrite($fp, "sleep 1 && rm video.mp4\n");
-            fwrite($fp, "sleep 1 && screen -S ".$filename."_encode -X quit\n");
+            fwrite($fp, "sleep 1 && /usr/bin/sudo /usr/bin/screen -S ".$filename."_encode -X quit\n");
             fclose($fp);
 
             # Write feeder script
@@ -350,31 +356,31 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
             // Reencode file in h264 video and aac audio so browsers can show it
             if (!file_exists($dash_path."/".$filename."/pipe.ts"))
             {
-                $response = shell_exec("mkfifo ".$dash_path."/".$filename."/pipe.ts");
+                $response = shell_exec("/usr/bin/sudo /usr/bin/mkfifo ".$dash_path."/".$filename."/pipe.ts");
             }
-            $response = shell_exec("chmod a+x ".$dash_path."/".$filename."/encode.sh");
-            $response = shell_exec("chmod a+x ".$dash_path."/".$filename."/packager.sh");
-            $response = shell_exec("chmod a+x ".$dash_path."/".$filename."/feeder.sh");
-            $response = shell_exec("chmod a+x ".$dash_path."/".$filename."/copy.sh");
-            $response = shell_exec("screen -S ".$filename."_encode -dm /bin/bash");
-            $response = shell_exec("screen -S ".$filename."_encode -X eval 'chdir ".$dash_path."/".$filename."'");
-            $response = shell_exec("screen -S ".$filename."_encode -X logfile '".$dash_path."/".$filename."/encode.log'");
-            $response = shell_exec("screen -S ".$filename."_encode -X log on");
-            $response = shell_exec("screen -S ".$filename."_encode -X stuff '".$dash_path."/".$filename."/encode.sh\n'");
-            $response = shell_exec("screen -S ".$filename."_packager -dm /bin/bash");
-            $response = shell_exec("screen -S ".$filename."_packager -X logfile '".$dash_path."/".$filename."/packager.log'");
-            $response = shell_exec("screen -S ".$filename."_packager -X log on");
-            $response = shell_exec("screen -S ".$filename."_packager -X stuff '".$dash_path."/".$filename."/packager.sh\n'");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/chmod a+x ".$dash_path."/".$filename."/encode.sh");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/chmod a+x ".$dash_path."/".$filename."/packager.sh");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/chmod a+x ".$dash_path."/".$filename."/feeder.sh");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/chmod a+x ".$dash_path."/".$filename."/copy.sh");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_encode -dm /bin/bash");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_encode -X eval 'chdir ".$dash_path."/".$filename."'");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_encode -X logfile '".$dash_path."/".$filename."/encode.log'");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_encode -X log on");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_encode -X stuff '".$dash_path."/".$filename."/encode.sh\n'");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_packager -dm /bin/bash");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_packager -X logfile '".$dash_path."/".$filename."/packager.log'");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_packager -X log on");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_packager -X stuff '".$dash_path."/".$filename."/packager.sh\n'");
             if ($mustencode)
             {
-                $response = shell_exec("screen -S ".$filename."_feeder -dm /bin/bash");
-                $response = shell_exec("screen -S ".$filename."_feeder -X stuff '".$dash_path."/".$filename."/feeder.sh\n'");
+                $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_feeder -dm /bin/bash");
+                $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_feeder -X stuff '".$dash_path."/".$filename."/feeder.sh\n'");
             }
-            $response = shell_exec("screen -S ".$filename."_mpdconverter -dm /bin/bash");
-            $response = shell_exec("screen -S ".$filename."_mpdconverter -X stuff '".$dash_path."/".$filename."/copy.sh\n'");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_mpdconverter -dm /bin/bash");
+            $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_mpdconverter -X stuff '".$dash_path."/".$filename."/copy.sh\n'");
         }
         ?>
-        
+
         <html>
         <head><title>Dash Video Player</title>
             <!-- Load the Shaka Player library. -->
@@ -396,7 +402,7 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
             var pad = "00";
             return pad.substring(0, pad.length - str.length) + str;
         }
-        
+
         function checkStatusListener()
         {
             //console.log(this.responseText);
@@ -499,7 +505,7 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
 
           // Try to load a manifest.
           // This is an asynchronous process.
-          player.load(manifestUri).then(function() {
+          player.load(manifestUri,2).then(function() {
             // This runs if the asynchronous load is successful.
             console.log('The video has now been loaded!');
           }).catch(onError);  // onError is executed if the asynchronous load fails.
@@ -556,8 +562,8 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
                 mkdir($dash_path."/".$filename);
             }
             // Get mediainfo
-            $mediainfo = shell_exec("mediainfo ".$video_path."/".$filename.".mpg");
-            preg_match_all('/Duration[ ]*:( (\d*)h)?( (\d*)mn)?( (\d*)s)?/',$mediainfo,$durationdetails);
+            $mediainfo = shell_exec("/usr/bin/mediainfo ".$video_path."/".$filename.".mpg");
+            preg_match_all('/Duration[ ]*:( (\d*) h)?( (\d*) min)?( (\d*) s)?/',$mediainfo,$durationdetails);
             $length = 0;
             if ($durationdetails[1][0])
             {
@@ -573,9 +579,10 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
             }
             preg_match_all('/Height[ ]*: (\d*[ ]?\d*) pixels/',$mediainfo,$heightdetails);
             $videoheight = ((int) str_replace(" ", "", $heightdetails[1][0]));
-            preg_match_all('/Frame rate[ ]*: (\d*\.?\d*) fps/',$mediainfo,$ratedetails);
-            $framerate = ((double)  $ratedetails[1][0]);
-
+            preg_match_all('/Frame rate[ ]*: (\d*\.?\d*) FPS/',$mediainfo,$ratedetails);
+            if(isset($ratedetails[1][0])) {
+               $framerate = ((double)  $ratedetails[1][0]);
+            }
             // Fetch any commerical marks
             preg_match_all('/^(\d*)_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/',$filename,$filedetails);
 
@@ -588,10 +595,10 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
             $second=$filedetails[7][0];
             $starttime="$year-$month-$day $hour:$minute:$second";
 
-            $dbconn=mysql_connect($dbserver,$dbuser,$dbpass);
-            mysql_select_db($dbname,$dbconn);
+            $dbconn=mysqli_connect($dbserver,$dbuser,$dbpass);
+            mysqli_select_db($dbconn,$dbname);
             $sqlselect="select * from recordedmarkup where (chanid=$chanid and starttime='$starttime' and (type=".MARK_COMM_START." or type=".MARK_COMM_END.")) order by mark;";
-            $result=mysql_query($sqlselect,$dbconn);
+            $result=mysqli_query($dbconn,$sqlselect);
             $fp = fopen($dash_path."/".$filename."/cutlist.txt", "w");
             fprintf($fp, "ffconcat version 1.0\n");
             $firstrow = true;
@@ -599,7 +606,7 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
             $startsegment = 0;
             $clippedlength = 0;
             $commcount = 0;
-            while ($row = mysql_fetch_assoc($result))
+            while ($row = mysqli_fetch_assoc($result))
             {
                 $commcount++;
                 $mark = (double) $row['mark'];
