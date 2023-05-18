@@ -2,7 +2,6 @@
 define('MARK_COMM_START',4);
 define('MARK_COMM_END',5);
 
-$video_path = "/recordings";
 $dash_path = "/var/www/html/dash/videos";
 $program_path = "/home/mythtv";
 
@@ -91,6 +90,7 @@ $getnames = sprintf("select title,subtitle,chanid,starttime,basename from record
 $result=mysqli_query($dbconn,$getnames);
 $names = array();
 $extension = "";
+$video_path = "";
 while ($row = mysqli_fetch_assoc($result))
 {
     $starttime = str_replace(":", "", str_replace(" ", "", str_replace("-", "", $row['starttime'])));
@@ -98,6 +98,15 @@ while ($row = mysqli_fetch_assoc($result))
     if ($_REQUEST["filename"] == pathinfo($row['basename'], PATHINFO_FILENAME))
     {
         $extension = pathinfo($row['basename'], PATHINFO_EXTENSION);
+        $get_storage_dirs = sprintf("select dirname from storagegroup where groupname=\"Default\"");
+        $q=mysqli_query($dbconn,$get_storage_dirs);
+        while ($row_q = mysqli_fetch_assoc($q))
+        {
+            if (file_exists($row_q["dirname"]."/".$_REQUEST["filename"].".$extension"))
+            {
+                $video_path= $row_q["dirname"];
+            }
+        }
     }
 }
 
