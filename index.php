@@ -86,14 +86,19 @@ for ($i = 0; $i < count($file_list); $i++)
 $query_parts_string=implode(" OR ", $query_parts);
 $dbconn=mysqli_connect($dbserver,$dbuser,$dbpass);
 mysqli_select_db($dbconn,$dbname);
-$getnames = sprintf("select title,subtitle,chanid,starttime from recorded where %s;",
+$getnames = sprintf("select title,subtitle,chanid,starttime,basename from recorded where %s;",
                     $query_parts_string);
 $result=mysqli_query($dbconn,$getnames);
 $names = array();
+$extension = "";
 while ($row = mysqli_fetch_assoc($result))
 {
     $starttime = str_replace(":", "", str_replace(" ", "", str_replace("-", "", $row['starttime'])));
     $names[$row['chanid']."_".$starttime] = $row['title'].($row['subtitle'] ? " - ".$row['subtitle'] : "");
+    if ($_REQUEST["filename"] == pathinfo($row['basename'], PATHINFO_FILENAME))
+    {
+        $extension = pathinfo($row['basename'], PATHINFO_EXTENSION);
+    }
 }
 
 $done = array();
@@ -120,8 +125,9 @@ for ($i = 0; $i < count($file_list); $i++)
         }
     }
 }
+
 $select_box .= "</select></form>";
-if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($dash_path."/".$_REQUEST["filename"]))
+if (file_exists($video_path."/".$_REQUEST["filename"].".$extension") || file_exists ($dash_path."/".$_REQUEST["filename"]))
 {
     $filename = $_REQUEST["filename"];
     if (isset($_REQUEST['action']) && $_REQUEST["action"] == "delete")
@@ -187,7 +193,7 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
         if (file_exists($dash_path."/".$filename."/video.mp4"))
         {
             $status["remuxBytesDone"] = filesize($dash_path."/".$filename."/video.mp4");
-            $status["remuxBytesTotal"] = filesize($video_path."/".$filename.".mpg");
+            $status["remuxBytesTotal"] = filesize($video_path."/".$filename.".$extension");
         }
         if (file_exists($dash_path."/".$filename."/ondemand.mpd"))
         {
@@ -328,7 +334,7 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
             if ($mustencode)
             {
                 // Launch remux to mp4
-                $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_remux -dm /bin/bash -c 'echo `date`: remux start > ".$dash_path."/".$filename."/status.txt ;".$program_path."/ffmpeg -y -i ".$video_path."/".$filename.".mpg -acodec copy -vcodec copy ".$dash_path."/".$filename."/video.mp4 && echo `date`: remux finish success >> ".$dash_path."/".$filename."/status.txt || echo `date`: remux finish failed >> ".$dash_path."/".$filename."/status.txt'");
+                $response = shell_exec("/usr/bin/sudo /usr/bin/screen -S ".$filename."_remux -dm /bin/bash -c 'echo `date`: remux start > ".$dash_path."/".$filename."/status.txt ;".$program_path."/ffmpeg -y -i ".$video_path."/".$filename.".$extension -acodec copy -vcodec copy ".$dash_path."/".$filename."/video.mp4 && echo `date`: remux finish success >> ".$dash_path."/".$filename."/status.txt || echo `date`: remux finish failed >> ".$dash_path."/".$filename."/status.txt'");
                 fwrite($fp, "while [ ! \"`cat ".$dash_path."/".$filename."/status.txt | grep 'remux finish success'`\" ] ; do sleep 1; done\n");
                 fwrite($fp, "echo `date`: encode start >> ".$dash_path."/".$filename."/status.txt ; ".$program_path."/ffmpeg ".$fileinput.$rescale." -c:a aac -ac 2".$audio." -af aresample=async=1 -c:v libx264 -x264opts \"keyint=".$keyint.":min-keyint=".$keyint.":no-scenecut\"".$rescale.$extra.$bitrate." -filter:v yadif -threads 3".$scaling." ".$dash_path."/".$filename."/video.ts && echo `date`: encode finish success >> ".$dash_path."/".$filename."/status.txt || echo `date`: encode finish failed >> ".$dash_path."/".$filename."/status.txt\n");
                 fwrite($fp, "sleep 3 && /usr/bin/sudo /usr/bin/screen -S ".$filename."_feeder -X quit\n");
@@ -555,14 +561,14 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
     }
     else
     {
-        if (file_exists($video_path."/".$_REQUEST["filename"].".mpg"))
+        if (file_exists($video_path."/".$_REQUEST["filename"].".$extension"))
         {
             if (!file_exists($dash_path."/".$filename))
             {
                 mkdir($dash_path."/".$filename);
             }
             // Get mediainfo
-            $mediainfo = shell_exec("/usr/bin/mediainfo ".$video_path."/".$filename.".mpg");
+            $mediainfo = shell_exec("/usr/bin/mediainfo ".$video_path."/".$filename.".$extension");
             preg_match_all('/Duration[ ]*:( (\d*) h)?( (\d*) min)?( (\d*) s)?/',$mediainfo,$durationdetails);
             $length = 0;
             if ($durationdetails[1][0])
@@ -654,7 +660,7 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
         <form action="index.php" method="GET">
             <input type="hidden" name="filename" value="<?php echo $filename; ?>">
         <?php
-        if (file_exists($video_path."/".$_REQUEST["filename"].".mpg"))
+        if (file_exists($video_path."/".$_REQUEST["filename"].".$extension"))
         {
             ?>
             <h2>Select the settings appropriate for your connection:</h2>
@@ -692,6 +698,16 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".mpg") || file_exists ($d
 }
 else
 {
-    echo "No such file";
+    echo "No such file:\n";
+    $filename = $_REQUEST["filename"];
+    echo $video_path."/".$_REQUEST["filename"].".$extension";
+    if (file_exists($video_path."".$_REQUEST["filename"].".$extension"))
+    {
+        echo " file exists";
+    }
+    else
+    {
+        echo " file does not exist or permission as apache user is denied";
+    }
 }
 ?>
