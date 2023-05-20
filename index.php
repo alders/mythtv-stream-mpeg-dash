@@ -258,7 +258,7 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".$extension") || file_exi
     {
         if (!file_exists($dash_path."/".$filename."/packager.sh"))
         {
-            if ($_REQUEST["removecomm"]=="on")
+            if ($_REQUEST["removecomm"]=="on" and $_REQUEST["commcount"] > 0)
             {
                 $fileinput = "-f concat -safe 0 -i ".$dash_path."/".$filename."/cutlist.txt";
                 $length = (int) $_REQUEST["clippedlength"];
@@ -693,6 +693,7 @@ if (file_exists($video_path."/".$_REQUEST["filename"].".$extension") || file_exi
             <input type="hidden" name="framerate" value="<?php echo $framerate; ?>">
             <input type="hidden" name="length" value="<?php echo $length; ?>">
             <input type="hidden" name="clippedlength" value="<?php echo (int)$clippedlength; ?>">
+            <input type="hidden" name="commcount" value="<?php echo (int)$commcount/2; ?>">
             <br>
             <br>
             <input type="submit" name="do" value="Watch Video">
